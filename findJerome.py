@@ -115,23 +115,29 @@ class FindJerome(commands.Cog):
         discord_files = []
         count = 0
         for user_id, score in self.found_count.items():
-            for key, image_url in score["image"].items():
-                if (limit != -1 and count >= limit):
-                    break
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(image_url) as resp:
-                        if resp.status != 200:
-                            print(f"Could not download image {image_url}")
-                            continue  # Skip this image if the download failed
-                        data = await resp.read()
-                discord_files.append(discord.File(io.BytesIO(data), filename=f"{user_id}_{key}.png"))
-                count += 1
-                if len(discord_files) == 10:
-                    await ctx.send(files=discord_files)
-                    discord_files = []
-        if discord_files:  # Send any remaining files
-            await ctx.send(files=discord_files)
-        
+            if score["image"]:
+                # Get the last 'n' keys
+                last_keys = sorted(map(int, score["image"].keys()))[-limit:]
+                for key in last_keys:
+                    key = str(key)
+                    if key in score["image"]:
+                        image_url = score["image"][key]
+                        if (limit != -1 and count >= limit):
+                            break
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get(image_url) as resp:
+                                if resp.status != 200:
+                                    print(f"Could not download image {image_url}")
+                                    continue  # Skip this image if the download failed
+                                data = await resp.read()
+                        discord_files.append(discord.File(io.BytesIO(data), filename=f"{user_id}_{key}.png"))
+                        count += 1
+                        if len(discord_files) == 10:
+                            await ctx.send(files=discord_files)
+                            discord_files = []
+            if discord_files:  # Send any remaining files
+                await ctx.send(files=discord_files)
+                discord_files = []
 
     @commands.hybrid_command(name="score" , help="Shows the scoreboard for everyone who has found Jerome", with_app_command=True)
     async def getScoreBoard(self, ctx):
