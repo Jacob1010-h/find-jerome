@@ -1,4 +1,5 @@
 # bot.py
+import asyncio
 import os
 
 from discord import Intents
@@ -22,13 +23,13 @@ async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
     await bot.tree.sync()
 
+# if admin
 @bot.hybrid_command(name='clear', help='Clears the chat of n messages', with_app_command=True)
+@commands.has_permissions(administrator=True)
 async def clear(ctx, amount=5):
+    await ctx.send(f'{amount} messages have been deleted.')
+    await asyncio.sleep(2)
     await ctx.channel.purge(limit=amount)
-
-@bot.hybrid_command(name='test', help='Tests the discord app', with_app_command=True)
-async def test(ctx):
-    await ctx.send("Hello!! I am Jerome!")
-
+    await ctx.channel.purge(limit=1)
 
 bot.run(TOKEN)
