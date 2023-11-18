@@ -17,19 +17,24 @@ intents = Intents.all()
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
+findJerome = FindJerome(bot)
+
 @bot.event
 async def on_ready():
-    await bot.add_cog(FindJerome(bot))
+    await bot.add_cog(findJerome)
     print(f'{bot.user.name} has connected to Discord!')
     await bot.tree.sync()
 
 # if admin
-@bot.hybrid_command(name='clear', help='Clears the chat of n messages', with_app_command=True)
+@bot.hybrid_command(name='clear', help='Clears the chat of n messages')
 @commands.has_permissions(administrator=True)
 async def clear(ctx, amount=5):
+    await ctx.channel.purge(limit=amount)
     await ctx.send(f'{amount} messages have been deleted.')
     await asyncio.sleep(2)
-    await ctx.channel.purge(limit=amount)
     await ctx.channel.purge(limit=1)
 
-bot.run(TOKEN)
+try:
+    bot.run(TOKEN)
+finally:
+    findJerome.sync()
