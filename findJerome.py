@@ -28,7 +28,9 @@ class ScoreboardEmbed(discord.Embed):
                 value=f"Score: {data['score']}",
                 inline=False
             )
-            images.append(data["image"])
+        for data in found.values():
+            for image in data["image"]:
+                images.append(image)
 
         if len(images) > 0:
             self.add_field(
@@ -70,7 +72,10 @@ class JustFoundEmbed(discord.Embed):
                 value=f"Score: {data['score']}",
                 inline=False
             )
-            images.append(data["image"])
+            
+        for data in found.values():
+            for image in data["image"]:
+                images.append(image)
 
         if len(images) > 0:
             self.add_field(
@@ -95,11 +100,11 @@ class FindJerome(commands.Cog):
         self.bot = bot
         self.found_count = self.load_from_file()
 
-    @deprecation.deprecated()
     @commands.hybrid_command(name="gallery", help="Shows the gallery of everyone who has found Jerome")
     async def getGallery(self, ctx, limit=-1):
         """
         Shows the gallery of everyone who has found Jerome by sending image URLs
+        with aiohttp
         <p>
         Parameters:
         - ctx (discord.Context): The context object representing the invocation of the command.
@@ -107,9 +112,8 @@ class FindJerome(commands.Cog):
         """
         discord_files = []
         count = 0
-        for data in self.found_count.values():
-            if data["image"]:
-                image_url = data["image"]
+        for data in self.found_count.values():  # changed this line
+            for image_url in reversed(data["image"]):
                 if (limit != -1 and count >= limit):
                     break
                 async with aiohttp.ClientSession() as session:
@@ -117,8 +121,8 @@ class FindJerome(commands.Cog):
                         if resp.status != 200:
                             print(f"Could not download image {image_url}")
                             continue  # Skip this image if the download failed
-                        data = await resp.read()
-                discord_files.append(discord.File(io.BytesIO(data), filename=f"{data['user']}_{data['score']}.png"))
+                        image_data = await resp.read()
+                discord_files.append(discord.File(io.BytesIO(image_data), filename=f"{data['user']}_{data['score']}.png"))
                 count += 1
                 if len(discord_files) == 10:
                     await ctx.send(files=discord_files)
@@ -144,9 +148,9 @@ class FindJerome(commands.Cog):
         user = ctx.author
         user_id_str = str(user.id)
         if user_id_str not in self.found_count:
-            self.found_count[user_id_str] = {"score": 0, "image": "", "user": user_id_str}
+            self.found_count[user_id_str] = {"score": 0, "image": [], "user": user_id_str}
         self.found_count[user_id_str]["score"] += 1
-        self.found_count[user_id_str]["image"] = image.url
+        self.found_count[user_id_str]["image"].append(image.url)
         embed = await JustFoundEmbed.create(self.bot, ctx, self.found_count)
         await ctx.send(embed=embed)
 
