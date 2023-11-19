@@ -29,10 +29,9 @@ async def on_ready():
 @bot.hybrid_command(name='clear', help='Clears the chat of n messages')
 @commands.has_permissions(administrator=True)
 async def clear(ctx, amount=5):
-    await ctx.channel.purge(limit=amount)
     await ctx.send(f'{amount} messages have been deleted.')
-    await asyncio.sleep(2)
-    await ctx.channel.purge(limit=1)
+    await asyncio.sleep(1)
+    await ctx.channel.purge(limit=amount+1)
 
 try:
     bot.run(TOKEN)
