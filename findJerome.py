@@ -206,12 +206,13 @@ class FindJerome(commands.Cog):
             await ctx.send("You haven't found Jerome yet!")
             return
         self.found_count[user_id_str]["image"].pop()
+        self.found_count[user_id_str]["score"] -= 1
         await ctx.send("Last found image has been deleted!")
         self.sync()
         
     @commands.hybrid_command(name="add", help="Adds a user to the scoreboard")
     @commands.has_permissions(administrator=True)
-    async def addUser(self, ctx, user: discord.Member, score: int, image: str):
+    async def addUser(self, ctx, user: discord.Member, image: str):
         """
         Adds a user to the scoreboard.
         <p>
@@ -224,7 +225,7 @@ class FindJerome(commands.Cog):
         user_id_str = str(user.id)
         if user_id_str not in self.found_count:
             self.found_count[user_id_str] = {"score": 0, "image": [], "user": user_id_str}
-        self.found_count[user_id_str]["score"] += score
+        self.found_count[user_id_str]["score"] += 1
         self.found_count[user_id_str]["image"].append(image)
         self.sync()
         await ctx.send(f"Added {user} to the scoreboard!")
