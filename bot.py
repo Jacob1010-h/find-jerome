@@ -28,9 +28,11 @@ async def print_to_c(type, msg):
     if type == "COMMAND":
         print(colored(type + " ", 'cyan'), end=' ')
     elif type == "SYNC":
-        print(colored(type + "    ", 'green'), end=' ')
+        print(colored(type + "    ", 'red'), end=' ')
     elif type == "EVENT":
         print(colored(type + "   ", 'yellow'), end=' ')
+    elif type == "LOAD":
+        print(colored(type + "    ", 'green'), end=' ')
     else:
         print(colored(type + "    ", 'blue'), end=' ')
     

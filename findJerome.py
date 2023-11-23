@@ -21,9 +21,11 @@ def print_to_c(type, msg):
     if type == "COMMAND":
         print(colored(type + " ", 'cyan'), end=' ')
     elif type == "SYNC":
-        print(colored(type + "    ", 'green'), end=' ')
+        print(colored(type + "    ", 'red'), end=' ')
     elif type == "EVENT":
         print(colored(type + "   ", 'yellow'), end=' ')
+    elif type == "LOAD":
+        print(colored(type + "    ", 'green'), end=' ')
     else:
         print(colored(type + "    ", 'blue'), end=' ')
     
@@ -221,7 +223,7 @@ class FindJerome(commands.Cog):
                 found_count = {}
                 for item in data.get("inputs", []):
                     found_count[item["user"]] = item
-                print_to_c("SYNC", "Scoreboard has been loaded from file!")
+                print_to_c("LOAD", "Scoreboard has been loaded from file!")
                 return found_count
         except FileNotFoundError:
             return {}
