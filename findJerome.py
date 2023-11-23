@@ -34,21 +34,31 @@ class ScoreboardEmbed(discord.Embed):
     @classmethod
     async def create(cls, bot, ctx, found):
         self = ScoreboardEmbed(bot, found)
+        all_data = []
         images = []
         foundUser = ""
         for data in found.values():
             self.user = await self.getUser(bot, ctx, data["user"])
             if self.user is None:
                 continue
-            self.add_field(
-                name=self.user,
-                value=f"Score: {data['score']}",
-                inline=False
-            )
-        for data in found.values():
+            
+            # add user and score to all_data to sort later
+            all_data.append((self.user, int(data["score"])))
+            
             for image in data["image"]:
                 images.append(image)
-                
+        
+        # keep the user with the highest score at the top
+        all_data.sort(key=lambda a: a[1], reverse=True)
+        
+        # add all_data to embed
+        for data in all_data:
+            self.add_field(
+                name=data[0],
+                value=f"Score: {data[1]}",
+                inline=False
+            )
+        
         for data in found.values():
             for image in data["image"]:
                 if image == images[-1]:
@@ -153,14 +163,14 @@ class FindJerome(commands.Cog):
             await ctx.send(files=discord_files)
             discord_files = []
         
-        print_to_c(f"Gallery has been sent to {ctx.author}!")
+        await print_to_c(f"Gallery has been sent to {ctx.author}!")
 
     @commands.hybrid_command(name="score", help="Shows the scoreboard for everyone who has found Jerome")
     async def getScoreBoard(self, ctx):
         embed = await ScoreboardEmbed.create(self.bot, ctx, self.found_count)
         await ctx.send(embed=embed)
         
-        print_to_c(f"Scoreboard has been sent to {ctx.author}!")
+        await print_to_c(f"Scoreboard has been sent to {ctx.author}!")
 
     @commands.hybrid_command(name="found", help="Found Jerome! Increases your score by 1")
     async def found(self, ctx, image: discord.Attachment):
@@ -180,18 +190,18 @@ class FindJerome(commands.Cog):
         embed = await JustFoundEmbed.create(self.bot, ctx, self.found_count)
         await ctx.send(embed=embed)
         
-        print_to_c(f"{ctx.author} has found Jerome!")
+        await print_to_c(f"{ctx.author} has found Jerome!")
 
-    def sync(self):
+    async def sync(self):
         """
         Syncs the scoreboard with the file.
         """
         with open("found.json", "w") as f:
             json.dump({"inputs": list(self.found_count.values())}, f)
-            print_to_c("Scoreboard has been synced!")
+            await print_to_c("Scoreboard has been synced!")
         
 
-    def load_from_file(self):
+    async def load_from_file(self):
         """
         Loads the scoreboard from the file.
         """
@@ -202,7 +212,7 @@ class FindJerome(commands.Cog):
                 found_count = {}
                 for item in data.get("inputs", []):
                     found_count[item["user"]] = item
-                print_to_c("Scoreboard has been loaded from file!")
+                await print_to_c("Scoreboard has been loaded from file!")
                 return found_count
         except FileNotFoundError:
             return {}
@@ -220,7 +230,7 @@ class FindJerome(commands.Cog):
         self.sync()
         await ctx.send("Scoreboard has been reset!")
         
-        print_to_c(f"Scoreboard has been reset by {ctx.author}!")
+        await print_to_c(f"Scoreboard has been reset by {ctx.author}!")
         
     @commands.hybrid_command(name="delete", help="Deletes the last found image")
     @commands.has_permissions(administrator=True)
@@ -243,7 +253,7 @@ class FindJerome(commands.Cog):
         await ctx.send("Last found image has been deleted!")
         self.sync()
         
-        print_to_c(f"Last found image has been deleted by {ctx.author}!")
+        await print_to_c(f"Last found image has been deleted by {ctx.author}!")
         
     @commands.hybrid_command(name="add", help="Adds a user to the scoreboard")
     @commands.has_permissions(administrator=True)
@@ -265,4 +275,4 @@ class FindJerome(commands.Cog):
         self.sync()
         await ctx.send(f"Added {user} to the scoreboard!")
         
-        print_to_c(f"{user} has been added to the scoreboard by {ctx.author}!")
+        await print_to_c(f"{user} has been added to the scoreboard by {ctx.author}!")
