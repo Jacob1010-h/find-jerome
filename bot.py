@@ -15,7 +15,7 @@ from findJerome import FindJerome
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-def print_to_c(type, msg):
+async def print_to_c(type, msg):
     """
     It prints a line, the current date and time, the input, another line, and a new line
     
@@ -23,9 +23,18 @@ def print_to_c(type, msg):
     """
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-    print(colored(dt_string, 'grey', end=' '))
-    print(colored(type + "\t", 'blue', end=' '))
-    print(colored("discord.bot.command", 'pink', end=' '))
+    print(colored(dt_string, 'dark_grey'), end=' ')
+    
+    if type == "COMMAND":
+        print(colored(type + " ", 'cyan'), end=' ')
+    elif type == "SYNC":
+        print(colored(type + "    ", 'green'), end=' ')
+    elif type == "EVENT":
+        print(colored(type + "   ", 'yellow'), end=' ')
+    else:
+        print(colored(type + "    ", 'blue'), end=' ')
+    
+    print(colored("discord.bot", 'magenta'), end=' ')
     print(colored(msg, 'white'))
     
 intents = Intents.all()
@@ -37,7 +46,7 @@ findJerome = FindJerome(bot)
 @bot.event
 async def on_ready():
     await bot.add_cog(findJerome)
-    await print_to_c("INFO", f'{bot.user.name} has connected to Discord!')
+    await print_to_c("EVENT", f'{bot.user.name} has connected to Discord!')
     await bot.tree.sync()
 
 @bot.event
