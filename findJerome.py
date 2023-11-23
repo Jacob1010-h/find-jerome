@@ -6,7 +6,21 @@ import aiohttp
 import discord
 from discord.ext import commands
 
-from bot import print_to_c
+LINE = "----------------------------------------"
+async def print_to_c(imp):
+    """
+    It prints a line, the current date and time, the input, another line, and a new line
+    
+    :param imp: The string to be printed
+    """
+    now = datetime.now()
+    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+    print(LINE)
+    print(dt_string)
+    print(imp)
+    print(LINE)
+    print("\n")
+
 
 class ScoreboardEmbed(discord.Embed):
     def __init__(self, bot, found):
