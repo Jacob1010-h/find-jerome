@@ -135,7 +135,7 @@ class FindJerome(commands.Cog):
         discord_files = []
         count = 0
         limit = -1
-        await print_to_c("INFO", f"Gallery requested by {ctx.author}!")
+        await print_to_c("EVENT", f"Gallery requested by {ctx.author}!")
         for data in self.found_count.values():  # changed this line
             for image_url in reversed(data["image"]):
                 if limit != -1 and count >= limit:
@@ -169,7 +169,7 @@ class FindJerome(commands.Cog):
         name="score", help="Shows the scoreboard for everyone who has found Jerome"
     )
     async def getScoreBoard(self, ctx):
-        await print_to_c("INFO", f"Scoreboard requested by {ctx.author}!")
+        await print_to_c("EVENT", f"Scoreboard requested by {ctx.author}!")
         
         embed = await ScoreboardEmbed.create(self.bot, ctx, self.found_count)
         await ctx.send(embed=embed)
@@ -187,7 +187,7 @@ class FindJerome(commands.Cog):
         - ctx (discord.Context): The context object representing the invocation of the command.
         - image (discord.Attachment): The image attachment submitted by the user.
         """
-        await print_to_c("INFO", f"{ctx.author} has requested to find Jerome!")
+        await print_to_c("EVENT", f"{ctx.author} has requested to find Jerome!")
         
         user = ctx.author
         user_id_str = str(user.id)
@@ -237,7 +237,7 @@ class FindJerome(commands.Cog):
         Parameters:
         - ctx (discord.Context): The context object representing the invocation of the command.
         """
-        await print_to_c("INFO", f"Scoreboard reset requested by {ctx.author}!")
+        await print_to_c("EVENT", f"Scoreboard reset requested by {ctx.author}!")
         
         self.found_count = {}
         self.sync()
@@ -254,7 +254,7 @@ class FindJerome(commands.Cog):
         Parameters:
         - ctx (discord.Context): The context object representing the invocation of the command.
         """
-        await print_to_c( "INFO", f"Last found image delete requested by {ctx.author}!")
+        await print_to_c( "EVENT", f"Last found image delete requested by {ctx.author}!")
         
         user_id_str = str(user.id)
         if user_id_str not in self.found_count:
@@ -282,7 +282,7 @@ class FindJerome(commands.Cog):
         - score (int): The score of the user.
         - image (str): The image URL of the user.
         """
-        await print_to_c("INFO", f"{user} has been requested to be added to the scoreboard by {ctx.author}!")
+        await print_to_c("EVENT", f"{user} has been requested to be added to the scoreboard by {ctx.author}!")
         
         user_id_str = str(user.id)
         if user_id_str not in self.found_count:
