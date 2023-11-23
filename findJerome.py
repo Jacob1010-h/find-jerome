@@ -1,36 +1,10 @@
-from datetime import datetime
-from termcolor import colored
 import io
 import json
-import deprecation
 import aiohttp
 import discord
 from discord.ext import commands
 
-def print_to_c(type, msg):
-    """
-    It prints a line, the current date and time, the input, another line, and a new line
-    
-    :param imp: The string to be printed
-    """
-    now = datetime.now()
-    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-    
-    print(colored(dt_string, 'dark_grey'), end=' ')
-    
-    if type == "COMMAND":
-        print(colored(type + " ", 'cyan'), end=' ')
-    elif type == "SYNC":
-        print(colored(type + "    ", 'red'), end=' ')
-    elif type == "EVENT":
-        print(colored(type + "   ", 'yellow'), end=' ')
-    elif type == "LOAD":
-        print(colored(type + "    ", 'green'), end=' ')
-    else:
-        print(colored(type + "    ", 'blue'), end=' ')
-    
-    print(colored("discord.find.jerome", 'magenta'), end=' ')
-    print(colored(msg, 'white'))
+from debugUtils import print_to_c
 
 
 class ScoreboardEmbed(discord.Embed):
@@ -39,7 +13,7 @@ class ScoreboardEmbed(discord.Embed):
             title="Scoreboard",
             url=None,
             description="Who is winning?! It's every person for themselves! With that being said...here are the scores:",
-            color=0xff8000
+            color=0xFF8000,
         )
 
     @classmethod
@@ -52,24 +26,20 @@ class ScoreboardEmbed(discord.Embed):
             self.user = await self.getUser(bot, ctx, data["user"])
             if self.user is None:
                 continue
-            
+
             # add user and score to all_data to sort later
             all_data.append((self.user, int(data["score"])))
-            
+
             for image in data["image"]:
                 images.append(image)
-        
+
         # keep the user with the highest score at the top
         all_data.sort(key=lambda a: a[1], reverse=True)
-        
+
         # add all_data to embed
         for data in all_data:
-            self.add_field(
-                name=data[0],
-                value=f"Score: {data[1]}",
-                inline=False
-            )
-        
+            self.add_field(name=data[0], value=f"Score: {data[1]}", inline=False)
+
         for data in found.values():
             for image in data["image"]:
                 if image == images[-1]:
@@ -79,7 +49,7 @@ class ScoreboardEmbed(discord.Embed):
             self.add_field(
                 name=f"Last Found | {await self.getUser(bot, ctx, foundUser)}",
                 value="",
-                inline=False
+                inline=False,
             )
             self.set_image(url=images[-1])
 
@@ -99,7 +69,7 @@ class JustFoundEmbed(discord.Embed):
             title="Scoreboard",
             url=None,
             description="Who's the bestest jerome finder?! :eyes:",
-            color=0xff8000
+            color=0xFF8000,
         )
 
     @classmethod
@@ -111,11 +81,9 @@ class JustFoundEmbed(discord.Embed):
             if self.user is None:
                 continue
             self.add_field(
-                name=self.user,
-                value=f"Score: {data['score']}",
-                inline=False
+                name=self.user, value=f"Score: {data['score']}", inline=False
             )
-            
+
         for data in found.values():
             for image in data["image"]:
                 images.append(image)
@@ -124,7 +92,7 @@ class JustFoundEmbed(discord.Embed):
             self.add_field(
                 name=f"Last Found | {await self.getUser(bot, ctx, ctx.author.id)}",
                 value="",
-                inline=False
+                inline=False,
             )
             self.set_image(url=images[-1])
 
@@ -143,7 +111,9 @@ class FindJerome(commands.Cog):
         self.bot = bot
         self.found_count = self.load_from_file()
 
-    @commands.hybrid_command(name="gallery", help="Shows the gallery of everyone who has found Jerome")
+    @commands.hybrid_command(
+        name="gallery", help="Shows the gallery of everyone who has found Jerome"
+    )
     async def getGallery(self, ctx):
         """
         Shows the gallery of everyone who has found Jerome by sending image URLs
@@ -157,7 +127,7 @@ class FindJerome(commands.Cog):
         limit = -1
         for data in self.found_count.values():  # changed this line
             for image_url in reversed(data["image"]):
-                if (limit != -1 and count >= limit):
+                if limit != -1 and count >= limit:
                     break
                 async with aiohttp.ClientSession() as session:
                     async with session.get(image_url) as resp:
@@ -165,7 +135,12 @@ class FindJerome(commands.Cog):
                             print(f"Could not download image {image_url}")
                             continue  # Skip this image if the download failed
                         image_data = await resp.read()
-                discord_files.append(discord.File(io.BytesIO(image_data), filename=f"{data['user']}_{data['score']}.png"))
+                discord_files.append(
+                    discord.File(
+                        io.BytesIO(image_data),
+                        filename=f"{data['user']}_{data['score']}.png",
+                    )
+                )
                 count += 1
                 if len(discord_files) == 10:
                     await ctx.send(files=discord_files)
@@ -173,17 +148,21 @@ class FindJerome(commands.Cog):
         if discord_files:  # Send any remaining files
             await ctx.send(files=discord_files)
             discord_files = []
-        
+
         await print_to_c("COMMAND", f"Gallery has been sent to {ctx.author}!")
 
-    @commands.hybrid_command(name="score", help="Shows the scoreboard for everyone who has found Jerome")
+    @commands.hybrid_command(
+        name="score", help="Shows the scoreboard for everyone who has found Jerome"
+    )
     async def getScoreBoard(self, ctx):
         embed = await ScoreboardEmbed.create(self.bot, ctx, self.found_count)
         await ctx.send(embed=embed)
-        
+
         await print_to_c("COMMAND", f"Scoreboard has been sent to {ctx.author}!")
 
-    @commands.hybrid_command(name="found", help="Found Jerome! Increases your score by 1")
+    @commands.hybrid_command(
+        name="found", help="Found Jerome! Increases your score by 1"
+    )
     async def found(self, ctx, image: discord.Attachment):
         """
         Increments the score and stores the image attachment when a user finds Jerome.
@@ -195,12 +174,16 @@ class FindJerome(commands.Cog):
         user = ctx.author
         user_id_str = str(user.id)
         if user_id_str not in self.found_count:
-            self.found_count[user_id_str] = {"score": 0, "image": [], "user": user_id_str}
+            self.found_count[user_id_str] = {
+                "score": 0,
+                "image": [],
+                "user": user_id_str,
+            }
         self.found_count[user_id_str]["score"] += 1
         self.found_count[user_id_str]["image"].append(image.url)
         embed = await JustFoundEmbed.create(self.bot, ctx, self.found_count)
         await ctx.send(embed=embed)
-        
+
         await print_to_c("COMMAND", f"{ctx.author} has found Jerome!")
 
     def sync(self):
@@ -210,13 +193,12 @@ class FindJerome(commands.Cog):
         with open("found.json", "w") as f:
             json.dump({"inputs": list(self.found_count.values())}, f)
             print_to_c("SYNC", "Scoreboard has been synced!")
-        
 
     def load_from_file(self):
         """
         Loads the scoreboard from the file.
         """
-        
+
         try:
             with open("found.json", "r") as f:
                 data = json.load(f)
@@ -240,9 +222,9 @@ class FindJerome(commands.Cog):
         self.found_count = {}
         self.sync()
         await ctx.send("Scoreboard has been reset!")
-        
+
         await print_to_c("COMMAND", f"Scoreboard has been reset by {ctx.author}!")
-        
+
     @commands.hybrid_command(name="delete", help="Deletes the last found image")
     @commands.has_permissions(administrator=True)
     async def deleteLast(self, ctx, user: discord.Member):
@@ -263,9 +245,11 @@ class FindJerome(commands.Cog):
         self.found_count[user_id_str]["score"] -= 1
         await ctx.send("Last found image has been deleted!")
         self.sync()
-        
-        await print_to_c("COMMAND", f"Last found image has been deleted by {ctx.author}!")
-        
+
+        await print_to_c(
+            "COMMAND", f"Last found image has been deleted by {ctx.author}!"
+        )
+
     @commands.hybrid_command(name="add", help="Adds a user to the scoreboard")
     @commands.has_permissions(administrator=True)
     async def addUser(self, ctx, user: discord.Member, image: str):
@@ -280,10 +264,16 @@ class FindJerome(commands.Cog):
         """
         user_id_str = str(user.id)
         if user_id_str not in self.found_count:
-            self.found_count[user_id_str] = {"score": 0, "image": [], "user": user_id_str}
+            self.found_count[user_id_str] = {
+                "score": 0,
+                "image": [],
+                "user": user_id_str,
+            }
         self.found_count[user_id_str]["score"] += 1
         self.found_count[user_id_str]["image"].append(image)
         self.sync()
         await ctx.send(f"Added {user} to the scoreboard!")
-        
-        await print_to_c("COMMAND", f"{user} has been added to the scoreboard by {ctx.author}!")
+
+        await print_to_c(
+            "COMMAND", f"{user} has been added to the scoreboard by {ctx.author}!"
+        )
