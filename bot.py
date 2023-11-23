@@ -54,12 +54,12 @@ async def on_command_error(ctx, error):
         await ctx.send('This command is not available.')
 
 # if admin
-@bot.hybrid_command(name='clear', help='Clears the chat of n messages')
-@commands.has_permissions(administrator=True)
-async def clear(ctx, amount=5):
-    await ctx.send(f'{amount} messages have been deleted.')
-    await asyncio.sleep(1)
-    await ctx.channel.purge(limit=amount+1)
+# @bot.hybrid_command(name='clear', help='Clears the chat of n messages')
+# @commands.has_permissions(administrator=True)
+# async def clear(ctx, amount=0):
+#     await ctx.send(f'{amount} messages have been deleted.')
+#     await asyncio.sleep(1)
+#     await ctx.channel.purge(limit=amount+1)
 
 try:
     bot.run(TOKEN)

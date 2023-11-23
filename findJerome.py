@@ -31,10 +31,15 @@ class ScoreboardEmbed(discord.Embed):
         for data in found.values():
             for image in data["image"]:
                 images.append(image)
+                
+        for data in found.values():
+            for image in data["image"]:
+                if image == images[-1]:
+                    foundUser = data["user"]
 
         if len(images) > 0:
             self.add_field(
-                name=f"Last Found | {await self.getUser(bot, ctx, ctx.author.id)}",
+                name=f"Last Found | {await self.getUser(bot, ctx, foundUser)}",
                 value="",
                 inline=False
             )
@@ -190,14 +195,13 @@ class FindJerome(commands.Cog):
         
     @commands.hybrid_command(name="delete", help="Deletes the last found image")
     @commands.has_permissions(administrator=True)
-    async def deleteLast(self, ctx):
+    async def deleteLast(self, ctx, user: discord.Member):
         """
         Deletes the last found image.
         <p>
         Parameters:
         - ctx (discord.Context): The context object representing the invocation of the command.
         """
-        user = ctx.author
         user_id_str = str(user.id)
         if user_id_str not in self.found_count:
             await ctx.send("You haven't found Jerome yet!")
