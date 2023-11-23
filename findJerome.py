@@ -1,9 +1,12 @@
+import datetime
 import io
 import json
 import deprecation
 import aiohttp
 import discord
 from discord.ext import commands
+
+from bot import print_to_c
 
 class ScoreboardEmbed(discord.Embed):
     def __init__(self, bot, found):
@@ -135,11 +138,15 @@ class FindJerome(commands.Cog):
         if discord_files:  # Send any remaining files
             await ctx.send(files=discord_files)
             discord_files = []
+        
+        print_to_c(f"Gallery has been sent to {ctx.author}!")
 
     @commands.hybrid_command(name="score", help="Shows the scoreboard for everyone who has found Jerome")
     async def getScoreBoard(self, ctx):
         embed = await ScoreboardEmbed.create(self.bot, ctx, self.found_count)
         await ctx.send(embed=embed)
+        
+        print_to_c(f"Scoreboard has been sent to {ctx.author}!")
 
     @commands.hybrid_command(name="found", help="Found Jerome! Increases your score by 1")
     async def found(self, ctx, image: discord.Attachment):
@@ -158,6 +165,8 @@ class FindJerome(commands.Cog):
         self.found_count[user_id_str]["image"].append(image.url)
         embed = await JustFoundEmbed.create(self.bot, ctx, self.found_count)
         await ctx.send(embed=embed)
+        
+        print_to_c(f"{ctx.author} has found Jerome!")
 
     def sync(self):
         """
@@ -165,17 +174,21 @@ class FindJerome(commands.Cog):
         """
         with open("found.json", "w") as f:
             json.dump({"inputs": list(self.found_count.values())}, f)
+            print_to_c("Scoreboard has been synced!")
+        
 
     def load_from_file(self):
         """
         Loads the scoreboard from the file.
         """
+        
         try:
             with open("found.json", "r") as f:
                 data = json.load(f)
                 found_count = {}
                 for item in data.get("inputs", []):
                     found_count[item["user"]] = item
+                print_to_c("Scoreboard has been loaded from file!")
                 return found_count
         except FileNotFoundError:
             return {}
@@ -192,6 +205,8 @@ class FindJerome(commands.Cog):
         self.found_count = {}
         self.sync()
         await ctx.send("Scoreboard has been reset!")
+        
+        print_to_c(f"Scoreboard has been reset by {ctx.author}!")
         
     @commands.hybrid_command(name="delete", help="Deletes the last found image")
     @commands.has_permissions(administrator=True)
@@ -214,6 +229,8 @@ class FindJerome(commands.Cog):
         await ctx.send("Last found image has been deleted!")
         self.sync()
         
+        print_to_c(f"Last found image has been deleted by {ctx.author}!")
+        
     @commands.hybrid_command(name="add", help="Adds a user to the scoreboard")
     @commands.has_permissions(administrator=True)
     async def addUser(self, ctx, user: discord.Member, image: str):
@@ -233,3 +250,5 @@ class FindJerome(commands.Cog):
         self.found_count[user_id_str]["image"].append(image)
         self.sync()
         await ctx.send(f"Added {user} to the scoreboard!")
+        
+        print_to_c(f"{user} has been added to the scoreboard by {ctx.author}!")
