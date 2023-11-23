@@ -2,7 +2,7 @@
 import asyncio
 from datetime import datetime
 import os
-
+from termcolor import colored
 from discord import Intents
 from discord.ext import commands
 from discord.ext.commands import CommandNotFound
@@ -14,9 +14,8 @@ from findJerome import FindJerome
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-LINE = "----------------------------------------"
 
-async def print_to_c(imp):
+def print_to_c(type, msg):
     """
     It prints a line, the current date and time, the input, another line, and a new line
     
@@ -24,11 +23,10 @@ async def print_to_c(imp):
     """
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-    print(LINE)
-    print(dt_string)
-    print(imp)
-    print(LINE)
-    print("\n")
+    print(colored(dt_string, 'grey', end=' '))
+    print(colored(type + "\t", 'blue', end=' '))
+    print(colored("discord.bot.command", 'pink', end=' '))
+    print(colored(msg, 'white'))
     
 intents = Intents.all()
 
@@ -39,7 +37,7 @@ findJerome = FindJerome(bot)
 @bot.event
 async def on_ready():
     await bot.add_cog(findJerome)
-    await print_to_c(f'{bot.user.name} has connected to Discord!')
+    await print_to_c("INFO", f'{bot.user.name} has connected to Discord!')
     await bot.tree.sync()
 
 @bot.event

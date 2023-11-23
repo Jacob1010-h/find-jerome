@@ -1,4 +1,5 @@
 from datetime import datetime
+from termcolor import colored
 import io
 import json
 import deprecation
@@ -6,8 +7,7 @@ import aiohttp
 import discord
 from discord.ext import commands
 
-LINE = "----------------------------------------"
-def print_to_c(imp):
+def print_to_c(type, msg):
     """
     It prints a line, the current date and time, the input, another line, and a new line
     
@@ -15,11 +15,10 @@ def print_to_c(imp):
     """
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-    print(LINE)
-    print(dt_string)
-    print(imp)
-    print(LINE)
-    print("\n")
+    print(colored(dt_string, 'grey', end=' '))
+    print(colored(type + "\t", 'blue', end=' '))
+    print(colored("discord.bot.command", 'pink', end=' '))
+    print(colored(msg, 'white'))
 
 
 class ScoreboardEmbed(discord.Embed):
@@ -163,14 +162,14 @@ class FindJerome(commands.Cog):
             await ctx.send(files=discord_files)
             discord_files = []
         
-        await print_to_c(f"Gallery has been sent to {ctx.author}!")
+        await print_to_c("INFO", f"Gallery has been sent to {ctx.author}!")
 
     @commands.hybrid_command(name="score", help="Shows the scoreboard for everyone who has found Jerome")
     async def getScoreBoard(self, ctx):
         embed = await ScoreboardEmbed.create(self.bot, ctx, self.found_count)
         await ctx.send(embed=embed)
         
-        await print_to_c(f"Scoreboard has been sent to {ctx.author}!")
+        await print_to_c("INFO", f"Scoreboard has been sent to {ctx.author}!")
 
     @commands.hybrid_command(name="found", help="Found Jerome! Increases your score by 1")
     async def found(self, ctx, image: discord.Attachment):
@@ -190,7 +189,7 @@ class FindJerome(commands.Cog):
         embed = await JustFoundEmbed.create(self.bot, ctx, self.found_count)
         await ctx.send(embed=embed)
         
-        await print_to_c(f"{ctx.author} has found Jerome!")
+        await print_to_c("INFO", f"{ctx.author} has found Jerome!")
 
     def sync(self):
         """
@@ -198,7 +197,7 @@ class FindJerome(commands.Cog):
         """
         with open("found.json", "w") as f:
             json.dump({"inputs": list(self.found_count.values())}, f)
-            print_to_c("Scoreboard has been synced!")
+            print_to_c("INFO", "Scoreboard has been synced!")
         
 
     def load_from_file(self):
@@ -212,7 +211,7 @@ class FindJerome(commands.Cog):
                 found_count = {}
                 for item in data.get("inputs", []):
                     found_count[item["user"]] = item
-                print_to_c("Scoreboard has been loaded from file!")
+                print_to_c("INFO", "Scoreboard has been loaded from file!")
                 return found_count
         except FileNotFoundError:
             return {}
@@ -230,7 +229,7 @@ class FindJerome(commands.Cog):
         self.sync()
         await ctx.send("Scoreboard has been reset!")
         
-        await print_to_c(f"Scoreboard has been reset by {ctx.author}!")
+        await print_to_c("INFO", f"Scoreboard has been reset by {ctx.author}!")
         
     @commands.hybrid_command(name="delete", help="Deletes the last found image")
     @commands.has_permissions(administrator=True)
@@ -253,7 +252,7 @@ class FindJerome(commands.Cog):
         await ctx.send("Last found image has been deleted!")
         self.sync()
         
-        await print_to_c(f"Last found image has been deleted by {ctx.author}!")
+        await print_to_c("INFO", f"Last found image has been deleted by {ctx.author}!")
         
     @commands.hybrid_command(name="add", help="Adds a user to the scoreboard")
     @commands.has_permissions(administrator=True)
@@ -275,4 +274,4 @@ class FindJerome(commands.Cog):
         self.sync()
         await ctx.send(f"Added {user} to the scoreboard!")
         
-        await print_to_c(f"{user} has been added to the scoreboard by {ctx.author}!")
+        await print_to_c("INFO", f"{user} has been added to the scoreboard by {ctx.author}!")
