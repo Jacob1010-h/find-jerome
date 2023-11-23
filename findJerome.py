@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 
 LINE = "----------------------------------------"
-async def print_to_c(imp):
+def print_to_c(imp):
     """
     It prints a line, the current date and time, the input, another line, and a new line
     
@@ -192,16 +192,16 @@ class FindJerome(commands.Cog):
         
         await print_to_c(f"{ctx.author} has found Jerome!")
 
-    async def sync(self):
+    def sync(self):
         """
         Syncs the scoreboard with the file.
         """
         with open("found.json", "w") as f:
             json.dump({"inputs": list(self.found_count.values())}, f)
-            await print_to_c("Scoreboard has been synced!")
+            print_to_c("Scoreboard has been synced!")
         
 
-    async def load_from_file(self):
+    def load_from_file(self):
         """
         Loads the scoreboard from the file.
         """
@@ -212,7 +212,7 @@ class FindJerome(commands.Cog):
                 found_count = {}
                 for item in data.get("inputs", []):
                     found_count[item["user"]] = item
-                await print_to_c("Scoreboard has been loaded from file!")
+                print_to_c("Scoreboard has been loaded from file!")
                 return found_count
         except FileNotFoundError:
             return {}
