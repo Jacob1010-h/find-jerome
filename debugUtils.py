@@ -15,8 +15,10 @@ def print_to_c(type, msg):
     
     if type == "COMMAND":
         print(colored(type + " ", 'cyan'), end=' ')
+    elif type == "ERROR":
+        print(colored(type + "   ", 'red'), end=' ')
     elif type == "SYNC":
-        print(colored(type + "    ", 'red'), end=' ')
+        print(colored(type + "    ", 'light_red'), end=' ')
     elif type == "EVENT":
         print(colored(type + "   ", 'yellow'), end=' ')
     elif type == "LOAD":
