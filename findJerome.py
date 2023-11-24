@@ -42,7 +42,7 @@ class ScoreboardEmbed(discord.Embed):
 
         # add all_data to embed
         for data in all_data:
-            self.add_field(name=data[0], value=f"Score: {data[1]}", inline=False)
+            self.add_field(name=data[0] + f" -- Score: {data[1]}", value="", inline=False)
 
         for data in found.values():
             for image in data["image"]:
@@ -89,7 +89,7 @@ class JustFoundEmbed(discord.Embed):
             if self.user is None:
                 continue
             self.add_field(
-                name=self.user, value=f"Score: {data['score']}", inline=False
+                name=self.user + f" -- Score: {data['score']}", value="", inline=False
             )
 
         for data in found.values():
