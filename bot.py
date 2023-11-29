@@ -41,15 +41,6 @@ async def on_command_error(ctx, error):
         await print_to_c("ERROR", f"Command not found: {ctx.message.content} in {ctx.message.channel} by {ctx.message.author}")
 
 
-# @deprecation.deprecated()
-# @bot.hybrid_command(name="clear", help="Clears the chat of n messages")
-# @commands.has_permissions(administrator=True)
-# async def clear(ctx, amount=0):
-#     await ctx.send(f"{amount} messages have been deleted.")
-#     await asyncio.sleep(1)
-#     await ctx.channel.purge(limit=amount + 1)
-
-
 try:
     bot.run(TOKEN)
 finally:

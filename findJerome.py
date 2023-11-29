@@ -17,14 +17,12 @@ class ScoreboardEmbed(discord.Embed):
         )
 
     @classmethod
-    async def create(cls, bot, ctx, found):
+    async def create(cls, bot, ctx, found, last_user, last_image):
         self = ScoreboardEmbed(bot, found)
         
         print_to_c("INFO", "Creating scoreboard embed")
         
         all_data = []
-        images = []
-        foundUser = ""
         
         for data in found.values():
             self.user = await self.getUser(bot, ctx, data["user"])
@@ -34,9 +32,6 @@ class ScoreboardEmbed(discord.Embed):
             # add user and score to all_data to sort later
             all_data.append((self.user, int(data["score"])))
 
-            for image in data["image"]:
-                images.append(image)
-
         # keep the user with the highest score at the top
         all_data.sort(key=lambda a: a[1], reverse=True)
 
@@ -44,20 +39,18 @@ class ScoreboardEmbed(discord.Embed):
         for data in all_data:
             self.add_field(name=data[0] + f" -- Score: {data[1]}", value="", inline=False)
 
-        for data in found.values():
-            for image in data["image"]:
-                if image == images[-1]:
-                    foundUser = data["user"]
-
         print_to_c("INFO", "Adding fields to embed")
-        if len(images) > 0:
+        print(last_user)
+        last_user = await self.getUser(bot, ctx, last_user)
+        if last_image is not None:
             self.add_field(
-                name=f"Last Found | {await self.getUser(bot, ctx, foundUser)}",
+                name=f"Last Found | {last_user}",
                 value="",
                 inline=False,
             )
-            self.set_image(url=images[-1])
+            self.set_image(url= last_image)
 
+        print_to_c("INFO", "Adding last found image to embed")
         return self
 
     async def getUser(self, bot, ctx, user_id):
@@ -78,12 +71,11 @@ class JustFoundEmbed(discord.Embed):
         )
 
     @classmethod
-    async def create(cls, bot, ctx, found):
+    async def create(cls, bot, ctx, found, last_user, last_image):
         self = JustFoundEmbed(bot, found)
         
         print_to_c("INFO", "Creating just found embed")
         
-        images = []
         for data in found.values():
             self.user = await self.getUser(bot, ctx, data["user"])
             if self.user is None:
@@ -92,18 +84,14 @@ class JustFoundEmbed(discord.Embed):
                 name=self.user + f" -- Score: {data['score']}", value="", inline=False
             )
 
-        for data in found.values():
-            for image in data["image"]:
-                images.append(image)
-
         print_to_c("INFO", "Adding fields to just found embed")
-        if len(images) > 0:
+        if last_image is not None:
             self.add_field(
-                name=f"Last Found | {await self.getUser(bot, ctx, ctx.author.id)}",
+                name=f"Last Found | {await self.getUser(bot, ctx, last_user)}",
                 value="",
                 inline=False,
             )
-            self.set_image(url=images[-1])
+            self.set_image(url=last_image)
 
 
         return self
@@ -119,51 +107,53 @@ class JustFoundEmbed(discord.Embed):
 class FindJerome(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.last_found_user = ""
+        self.last_found_image = ""
         self.found_count = self.load_from_file()
 
-    @commands.hybrid_command(
-        name="gallery", help="Shows the gallery of everyone who has found Jerome"
-    )
-    async def getGallery(self, ctx):
-        """
-        Shows the gallery of everyone who has found Jerome by sending image URLs
-        with aiohttp
-        <p>
-        Parameters:
-        - ctx (discord.Context): The context object representing the invocation of the command.
-        """
-        discord_files = []
-        count = 0
-        limit = -1
-        print_to_c("EVENT", f"Gallery requested by {ctx.author}!")
-        for data in self.found_count.values():  # changed this line
-            for image_url in reversed(data["image"]):
-                if limit != -1 and count >= limit:
-                    break
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(image_url) as resp:
-                        if resp.status != 200:
-                            print_to_c(
-                                "ERROR",
-                                f"Could not download image {image_url} for {data['user']}",
-                            )
-                            continue  # Skip this image if the download failed
-                        image_data = await resp.read()
-                discord_files.append(
-                    discord.File(
-                        io.BytesIO(image_data),
-                        filename=f"{data['user']}_{data['score']}.png",
-                    )
-                )
-                count += 1
-                if len(discord_files) == 10:
-                    await ctx.send(files=discord_files)
-                    discord_files = []
-        if discord_files:  # Send any remaining files
-            await ctx.send(files=discord_files)
-            discord_files = []
+    # @commands.hybrid_command(
+    #     name="gallery", help="Shows the gallery of everyone who has found Jerome"
+    # )
+    # async def getGallery(self, ctx):
+    #     """
+    #     Shows the gallery of everyone who has found Jerome by sending image URLs
+    #     with aiohttp
+    #     <p>
+    #     Parameters:
+    #     - ctx (discord.Context): The context object representing the invocation of the command.
+    #     """
+    #     discord_files = []
+    #     count = 0
+    #     limit = -1
+    #     print_to_c("EVENT", f"Gallery requested by {ctx.author}!")
+    #     for data in self.found_count.values():  # changed this line
+    #         for image_url in reversed(data["image"]):
+    #             if limit != -1 and count >= limit:
+    #                 break
+    #             async with aiohttp.ClientSession() as session:
+    #                 async with session.get(image_url) as resp:
+    #                     if resp.status != 200:
+    #                         print_to_c(
+    #                             "ERROR",
+    #                             f"Could not download image {image_url} for {data['user']}",
+    #                         )
+    #                         continue  # Skip this image if the download failed
+    #                     image_data = await resp.read()
+    #             discord_files.append(
+    #                 discord.File(
+    #                     io.BytesIO(image_data),
+    #                     filename=f"{data['user']}_{data['score']}.png",
+    #                 )
+    #             )
+    #             count += 1
+    #             if len(discord_files) == 10:
+    #                 await ctx.send(files=discord_files)
+    #                 discord_files = []
+    #     if discord_files:  # Send any remaining files
+    #         await ctx.send(files=discord_files)
+    #         discord_files = []
 
-        print_to_c("COMMAND", f"Gallery has been sent to {ctx.author}!")
+    #     print_to_c("COMMAND", f"Gallery has been sent to {ctx.author}!")
 
     @commands.hybrid_command(
         name="score", help="Shows the scoreboard for everyone who has found Jerome"
@@ -171,7 +161,7 @@ class FindJerome(commands.Cog):
     async def getScoreBoard(self, ctx):
         print_to_c("EVENT", f"Scoreboard requested by {ctx.author}!")
         
-        embed = await ScoreboardEmbed.create(self.bot, ctx, self.found_count)
+        embed = await ScoreboardEmbed.create(self.bot, ctx, self.found_count, self.last_found_image, self.last_found_user)
         await ctx.send(embed=embed)
 
         print_to_c("COMMAND", f"Scoreboard has been sent to {ctx.author}!")
@@ -199,7 +189,9 @@ class FindJerome(commands.Cog):
             }
         self.found_count[user_id_str]["score"] += 1
         self.found_count[user_id_str]["image"].append(image.url)
-        embed = await JustFoundEmbed.create(self.bot, ctx, self.found_count)
+        self.last_found_user = user_id_str
+        self.last_found_image = image.url
+        embed = await JustFoundEmbed.create(self.bot, ctx, self.found_count, self.last_found_user, self.last_found_image)
         await ctx.send(embed=embed)
 
         print_to_c("COMMAND", f"{ctx.author} has found Jerome!")
@@ -209,7 +201,7 @@ class FindJerome(commands.Cog):
         Syncs the scoreboard with the file.
         """
         with open("found.json", "w") as f:
-            json.dump({"inputs": list(self.found_count.values())}, f)
+            json.dump({"inputs": list(self.found_count.values()), "lastFound": [self.last_found_user, self.last_found_image]}, f)
             print_to_c("SYNC", "Scoreboard has been synced!")
 
     def load_from_file(self):
@@ -223,79 +215,80 @@ class FindJerome(commands.Cog):
                 found_count = {}
                 for item in data.get("inputs", []):
                     found_count[item["user"]] = item
+                self.last_found_image, self.last_found_user = data.get("lastFound", [None, None])
                 print_to_c("LOAD", "Scoreboard has been loaded from file!")
                 return found_count
         except FileNotFoundError:
             return {}
 
-    @commands.hybrid_command(name="reset", help="Resets the scoreboard")
-    @commands.has_permissions(administrator=True)
-    async def resetData(self, ctx):
-        """
-        Resets the scoreboard.
-        <p>
-        Parameters:
-        - ctx (discord.Context): The context object representing the invocation of the command.
-        """
-        print_to_c("EVENT", f"Scoreboard reset requested by {ctx.author}!")
+    # @commands.hybrid_command(name="reset", help="Resets the scoreboard")
+    # @commands.has_permissions(administrator=True)
+    # async def resetData(self, ctx):
+    #     """
+    #     Resets the scoreboard.
+    #     <p>
+    #     Parameters:
+    #     - ctx (discord.Context): The context object representing the invocation of the command.
+    #     """
+    #     print_to_c("EVENT", f"Scoreboard reset requested by {ctx.author}!")
         
-        self.found_count = {}
-        self.sync()
-        await ctx.send("Scoreboard has been reset!")
+    #     self.found_count = {}
+    #     self.sync()
+    #     await ctx.send("Scoreboard has been reset!")
 
-        print_to_c("COMMAND", f"Scoreboard has been reset by {ctx.author}!")
+    #     print_to_c("COMMAND", f"Scoreboard has been reset by {ctx.author}!")
 
-    @commands.hybrid_command(name="delete", help="Deletes the last found image")
-    @commands.has_permissions(administrator=True)
-    async def deleteLast(self, ctx, user: discord.Member):
-        """
-        Deletes the last found image.
-        <p>
-        Parameters:
-        - ctx (discord.Context): The context object representing the invocation of the command.
-        """
-        print_to_c( "EVENT", f"Last found image delete requested by {ctx.author}!")
+    # @commands.hybrid_command(name="delete", help="Deletes the last found image")
+    # @commands.has_permissions(administrator=True)
+    # async def deleteLast(self, ctx, user: discord.Member):
+    #     """
+    #     Deletes the last found image.
+    #     <p>
+    #     Parameters:
+    #     - ctx (discord.Context): The context object representing the invocation of the command.
+    #     """
+    #     print_to_c( "EVENT", f"Last found image delete requested by {ctx.author}!")
         
-        user_id_str = str(user.id)
-        if user_id_str not in self.found_count:
-            await ctx.send("You haven't found Jerome yet!")
-            return
-        if len(self.found_count[user_id_str]["image"]) == 0:
-            await ctx.send("You haven't found Jerome yet!")
-            return
-        self.found_count[user_id_str]["image"].pop()
-        self.found_count[user_id_str]["score"] -= 1
-        await ctx.send("Last found image has been deleted!")
-        self.sync()
+    #     user_id_str = str(user.id)
+    #     if user_id_str not in self.found_count:
+    #         await ctx.send("You haven't found Jerome yet!")
+    #         return
+    #     if len(self.found_count[user_id_str]["image"]) == 0:
+    #         await ctx.send("You haven't found Jerome yet!")
+    #         return
+    #     self.found_count[user_id_str]["image"].pop()
+    #     self.found_count[user_id_str]["score"] -= 1
+    #     await ctx.send("Last found image has been deleted!")
+    #     self.sync()
 
-        print_to_c("COMMAND", f"Last found image has been deleted by {ctx.author}!")
+    #     print_to_c("COMMAND", f"Last found image has been deleted by {ctx.author}!")
 
-    @commands.hybrid_command(name="add", help="Adds a user to the scoreboard")
-    @commands.has_permissions(administrator=True)
-    async def addUser(self, ctx, user: discord.Member, image: str):
-        """
-        Adds a user to the scoreboard.
-        <p>
-        Parameters:
-        - ctx (discord.Context): The context object representing the invocation of the command.
-        - user (discord.Member): The user to add to the scoreboard.
-        - score (int): The score of the user.
-        - image (str): The image URL of the user.
-        """
-        print_to_c("EVENT", f"{user} has been requested to be added to the scoreboard by {ctx.author}!")
+    # @commands.hybrid_command(name="add", help="Adds a user to the scoreboard")
+    # @commands.has_permissions(administrator=True)
+    # async def addUser(self, ctx, user: discord.Member, image: str):
+    #     """
+    #     Adds a user to the scoreboard.
+    #     <p>
+    #     Parameters:
+    #     - ctx (discord.Context): The context object representing the invocation of the command.
+    #     - user (discord.Member): The user to add to the scoreboard.
+    #     - score (int): The score of the user.
+    #     - image (str): The image URL of the user.
+    #     """
+    #     print_to_c("EVENT", f"{user} has been requested to be added to the scoreboard by {ctx.author}!")
         
-        user_id_str = str(user.id)
-        if user_id_str not in self.found_count:
-            self.found_count[user_id_str] = {
-                "score": 0,
-                "image": [],
-                "user": user_id_str,
-            }
-        self.found_count[user_id_str]["score"] += 1
-        self.found_count[user_id_str]["image"].append(image)
-        self.sync()
-        await ctx.send(f"Added {user} to the scoreboard!")
+    #     user_id_str = str(user.id)
+    #     if user_id_str not in self.found_count:
+    #         self.found_count[user_id_str] = {
+    #             "score": 0,
+    #             "image": [],
+    #             "user": user_id_str,
+    #         }
+    #     self.found_count[user_id_str]["score"] += 1
+    #     self.found_count[user_id_str]["image"].append(image)
+    #     self.sync()
+    #     await ctx.send(f"Added {user} to the scoreboard!")
 
-        print_to_c(
-            "COMMAND", f"{user} has been added to the scoreboard by {ctx.author}!"
-        )
+    #     print_to_c(
+    #         "COMMAND", f"{user} has been added to the scoreboard by {ctx.author}!"
+    #     )
