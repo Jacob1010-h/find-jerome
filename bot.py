@@ -4,7 +4,6 @@ import os
 from discord import Intents
 from discord.ext import commands
 from discord.ext.commands import CommandNotFound
-import deprecation
 
 from dotenv import load_dotenv
 from debugUtils import print_to_c
